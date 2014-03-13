@@ -40,8 +40,17 @@ if (!program.includeall && (!program.submodules || program.submodules.length ===
 }
 
 var pack = function (params) {
-console.log(" MAT:" + process.cwd())
-  
+
+
+console.log(" MAT:" + process.cwd());
+var sys = require('sys')
+var exec = require('child_process').exec;
+exec("ls -la", puts);
+exec("ls -la node_modules/soop", puts);
+exec("ls -la node_modules/soop/example", puts);
+function puts(error, stdout, stderr) { sys.puts(stdout) };
+
+
   var preludePath  = 'node_modules/soop/example/custom_prelude.js';
   params.raw = true;
   params.sourceMapPrefix = '//#';
