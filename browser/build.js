@@ -40,6 +40,8 @@ if (!program.includeall && (!program.submodules || program.submodules.length ===
 }
 
 var pack = function (params) {
+console.log(" MAT:" + process.cwd())
+  
   var preludePath  = 'node_modules/soop/example/custom_prelude.js';
   params.raw = true;
   params.sourceMapPrefix = '//#';
