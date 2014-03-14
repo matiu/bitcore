@@ -1,4 +1,3 @@
-
 # TransactionSimple
         
         
@@ -6,7 +5,7 @@
 
 ### Inputs
 
-    * ins: [{hash, vout}, ...] (can be from *getUnspends*)
+    * ins: [{address, vout}, ...] (can be from *getUnspends*)
     * outs: [{address, value}, ... ]
     * opts: [{lock_time=0, maxFees=0.01, remainderAddressString=null}]
 
@@ -27,6 +26,10 @@
     * Tx (bitcore Object)
     * KeyArray
       Array of: WalleyKeys or Keys or Strings (private keys WIF)
+      
+priv -> public -> address
+
+      
         
 -> Signs and Verify the TX
 -> Updates the TX Object
