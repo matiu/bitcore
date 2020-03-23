@@ -190,15 +190,14 @@ export class Key {
           keys.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
         }
         password = '\0'.repeat(password.length);
- 
+
         // update fingerPrint if not set.
         if (!this.fingerPrint) {
           let xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
           this.fingerPrint = xpriv.fingerPrint.toString('hex');
           fingerPrintUpdated = true;
         }
-
-     } catch (ex) {
+      } catch (ex) {
         throw new Error('Could not decrypt');
       }
     } else {
