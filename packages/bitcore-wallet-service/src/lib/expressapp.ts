@@ -738,6 +738,42 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v2/balance/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string; isBigInt?: boolean } = {};
+        if (req.query.coin) opts.coin = req.query.coin;
+        if (req.query.twoStep == '1') opts.twoStep = true;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        opts.isBigInt = true;
+
+        server.getBalance(opts, (err, balance) => {
+          let balanceResponse = {};
+
+          if (err) return returnError(err, res, req);
+          if (opts.isBigInt) {
+             _.forEach(balance, (value, key) => {
+                if (key == 'totalAmount') {
+                  balanceResponse[key] = balance[key].toString();
+                } 
+
+                if (key == 'byAddress'){
+                  balanceResponse[key] = balance[key];
+                  if (balanceResponse[key].amount) {
+                    balanceResponse[key].amount = balanceResponse[key].amount.toString();
+                  }
+                }
+                
+                else {
+                  balanceResponse[key] = balance[key];
+                }
+            });
+          }
+          res.json(balanceResponse);
+        });
+      });
+    });
+
     let estimateFeeLimiter;
 
     if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {

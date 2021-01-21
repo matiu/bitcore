@@ -6141,7 +6141,7 @@ describe('client API', function() {
     });
   });
 
-  describe('Mobility, backup & restore', () => {
+  describe.only('Mobility, backup & restore', () => {
     describe('Export & Import', () => {
       var address, importedClient;
       describe('Compliant derivation', () => {
@@ -6998,7 +6998,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to recover funds from recreated wallet', function(done) {
+      it('should be able to recover funds from recreated wallet /v1/balance/', function(done) {
         this.timeout(10000);
         helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
           clients[0].createAddress((err, addr) => {
@@ -7042,12 +7042,75 @@ describe('client API', function() {
                               recoveryClient.getBalance({}, (err, b) => {
                                 balance = b.totalAmount;
                                 next(err);
-                              });
+                              }, '/v1/balance/');
                             }, 200);
                           },
                           err => {
                             should.not.exist(err,err);
-                            balance.should.equal(1e8);
+                            balance.toString().should.equal("100000000");
+                            done();
+                          }
+                        );
+                      });
+                    });
+                  });
+                });
+              }
+            );
+          });
+        });
+      });
+
+      it('should be able to recover funds from recreated wallet /v2/balance/', function(done) {
+        this.timeout(10000);
+        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
+          clients[0].createAddress((err, addr) => {
+            should.not.exist(err,err);
+            should.exist(addr);
+            blockchainExplorerMock.setUtxo(addr, 1, 2);
+
+            var storage = new Storage({
+              db: db2
+            });
+            var newApp;
+            var expressApp = new ExpressApp();
+            expressApp.start(
+              {
+                storage: storage,
+                blockchainExplorer: blockchainExplorerMock,
+                disableLogs: true
+              },
+              () => {
+                newApp = expressApp.app;
+
+                var recoveryClient = helpers.newClient(newApp);
+                recoveryClient.fromString(clients[0].toString());
+
+                recoveryClient.getStatus({}, (err, status) => {
+                  should.exist(err);
+                  err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                  recoveryClient.recreateWallet(err => {
+                    should.not.exist(err,err);
+                    recoveryClient.getStatus({}, (err, status) => {
+                      should.not.exist(err,err);
+                      recoveryClient.startScan({}, err => {
+                        should.not.exist(err,err);
+                        var balance = 0;
+                        async.whilst(
+                          () => {
+                            return balance == 0;
+                          },
+                          next => {
+                            setTimeout(() => {
+                              recoveryClient.getBalance({}, (err, b) => {
+                                balance = b.totalAmount;
+                                next(err);
+                              }, '/v2/balance/');
+                            }, 200);
+                          },
+                          err => {
+                            should.not.exist(err,err);
+                            balance.toString().should.equal("100000000");
                             done();
                           }
                         );

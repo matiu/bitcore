@@ -1593,7 +1593,7 @@ export class API extends EventEmitter {
   // * @param {String} opts.multisigContractAddress optional: MULTISIG ETH Contract Address
   // * @param {Callback} cb
   // */
-  getBalance(opts, cb) {
+  getBalance(opts, cb, baseUrl) {
     if (!cb) {
       cb = opts;
       opts = {};
@@ -1624,7 +1624,7 @@ export class API extends EventEmitter {
       qs = '?' + args.join('&');
     }
 
-    var url = '/v1/balance/' + qs;
+    var url = baseUrl + qs;
     this.request.get(url, (err, inB) => {
       if (err) return cb(err);
       return cb(null, this.convertBalance(inB));
