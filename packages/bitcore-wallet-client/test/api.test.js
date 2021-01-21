@@ -6,6 +6,7 @@ var chai = require('chai');
 chai.config.includeStack = true;
 var sinon = require('sinon');
 var should = chai.should();
+var expect = chai.expect();
 var async = require('async');
 var request = require('supertest');
 var Uuid = require('uuid');
@@ -41,6 +42,7 @@ var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
 var Errors = require('../ts_build/lib/errors');
+const { assert } = require('console');
 
 var helpers = {};
 helpers.toSatoshi = btc => {
@@ -6998,7 +7000,70 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to recover funds from recreated wallet', function(done) {
+      it('should be able to recover funds from recreated wallet /v1/balance/', function(done) {
+        this.timeout(10000);
+        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
+          clients[0].createAddress((err, addr) => {
+            should.not.exist(err,err);
+            should.exist(addr);
+            blockchainExplorerMock.setUtxo(addr, 1, 2);
+
+            var storage = new Storage({
+              db: db2
+            });
+            var newApp;
+            var expressApp = new ExpressApp();
+            expressApp.start(
+              {
+                storage: storage,
+                blockchainExplorer: blockchainExplorerMock,
+                disableLogs: true
+              },
+              () => {
+                newApp = expressApp.app;
+
+                var recoveryClient = helpers.newClient(newApp);
+                recoveryClient.fromString(clients[0].toString());
+
+                recoveryClient.getStatus({}, (err, status) => {
+                  should.exist(err);
+                  err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                  recoveryClient.recreateWallet(err => {
+                    should.not.exist(err,err);
+                    recoveryClient.getStatus({}, (err, status) => {
+                      should.not.exist(err,err);
+                      recoveryClient.startScan({}, err => {
+                        should.not.exist(err,err);
+                        var balance = 0;
+                        async.whilst(
+                          () => {
+                            return balance == 0;
+                          },
+                          next => {
+                            setTimeout(() => {
+                              recoveryClient.getBalance({doNotConvertResponse: true}, (err, b) => {
+                                balance = b.totalAmount;
+                                next(err);
+                              }, '/v1/balance/');
+                            }, 200);
+                          },
+                          err => {
+                            should.not.exist(err,err);
+                            (typeof(balance) === "string").should.equal(true);
+                            done();
+                          }
+                        );
+                      });
+                    });
+                  });
+                });
+              }
+            );
+          });
+        });
+      });
+
+      it('should be able to recover funds from recreated wallet /v2/balance/', function(done) {
         this.timeout(10000);
         helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
           clients[0].createAddress((err, addr) => {
@@ -7042,12 +7107,12 @@ describe('client API', function() {
                               recoveryClient.getBalance({}, (err, b) => {
                                 balance = b.totalAmount;
                                 next(err);
-                              });
+                              }, '/v2/balance/');
                             }, 200);
                           },
                           err => {
                             should.not.exist(err,err);
-                            balance.should.equal(1e8);
+                            (typeof(balance) === "bigint").should.equal(true);
                             done();
                           }
                         );
