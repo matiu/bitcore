@@ -1563,27 +1563,27 @@ export class API extends EventEmitter {
   }
 
   private convertBalance(inB) {
-    let ret: any = {};  
+    let ret: any = {};
     const fields = [
       'totalAmount',
       'lockedAmount',
       'totalConfirmedAmount',
       'lockedConfirmedAmount',
       'availableAmount',
-      'availableConfirmedAmount',
+      'availableConfirmedAmount'
     ];
 
-    fields.forEach(x=> { 
+    fields.forEach(x => {
       ret[x] = BigInt(inB[x] || 0);
     });
 
     ret.byAddress = inB.byAddress;
-    ret.byAddress.forEach(x=> {
+    ret.byAddress.forEach(x => {
       x = BigInt(x.amount || 0);
     });
 
     return ret;
-  };
+  }
 
   // /**
   // * Update wallet balance
@@ -1593,7 +1593,7 @@ export class API extends EventEmitter {
   // * @param {String} opts.multisigContractAddress optional: MULTISIG ETH Contract Address
   // * @param {Callback} cb
   // */
-  getBalance(opts, cb) {
+  getBalance(opts, cb, baseUrl) {
     if (!cb) {
       cb = opts;
       opts = {};
@@ -1601,6 +1601,7 @@ export class API extends EventEmitter {
     }
 
     opts = opts || {};
+    baseUrl = baseUrl || '/v2/balance/';
 
     $.checkState(
       this.credentials && this.credentials.isComplete(),
@@ -1624,9 +1625,10 @@ export class API extends EventEmitter {
       qs = '?' + args.join('&');
     }
 
-    var url = '/v1/balance/' + qs;
+    var url = baseUrl + qs;
     this.request.get(url, (err, inB) => {
       if (err) return cb(err);
+      if (opts.doNotConvertResponse) return cb(null, inB);
       return cb(null, this.convertBalance(inB));
     });
   }
